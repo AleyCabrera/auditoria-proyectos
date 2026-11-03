@@ -624,9 +624,9 @@ Este proyecto está bajo la [Licencia MIT](LICENSE). Podés usar, modificar y di
 
 **Aley Cabrera D.**
 
-- GitHub: [@AleyCabreraD](https://github.com/AleyCabreraD)
+- GitHub: [@AleyCabreraD](https://github.com/AleyCabrera)
 - LinkedIn: Aley Cabrera D.
-- Email: aley.cabrera@gmail.com
+- Email: contacto@aleycabrera.com
 
 Construido como herramienta para auditar proyectos personales antes de un deploy o un PR. Si te sirve, contame en qué la usás.
 
