@@ -9,6 +9,8 @@ from auditor.external import ExternalResult
 from auditor.scanner import FileRecord
 from auditor.secrets import SecretHit
 
+CHUNK_SEPARATOR = "\n\n<!-- CHUNK_BREAK -->\n\n"
+
 
 def _tree(records: list[FileRecord], root_name: str) -> str:
     paths = sorted({r.relative.as_posix() for r in records})
@@ -131,7 +133,7 @@ def render(records: list[FileRecord], cfg: AuditConfig, *,
     budget = cfg.max_total_mb * 1024 * 1024
     written = sum(len(p.encode("utf-8")) for p in parts)
     skipped: list[FileRecord] = []
-
+    
     for record in records:
         if record.skipped_reason is not None:
             continue
@@ -147,20 +149,36 @@ def render(records: list[FileRecord], cfg: AuditConfig, *,
             f"```{fence}\n"
         )
         footer = "\n```\n\n---\n\n"
-        block = header + content + footer
-        if written + len(block.encode("utf-8")) > budget:
-            record.skipped_reason = "budget"
-            skipped.append(record)
-            continue
-        parts.append(block)
-        written += len(block.encode("utf-8"))
+        parts.append(header + content + footer + CHUNK_SEPARATOR)
 
-    all_omitted = [r for r in records if r.skipped_reason is not None]
+    # for record in records:
+    #     if record.skipped_reason is not None:
+    #         continue
+    #     content = record.content
+    #     if redact and record.secret_hits:
+    #         from auditor.secrets import redact_text
+    #         content = redact_text(content, record.secret_hits)
+    #     fence = record.fence
+    #     header = (
+    #         f"## `{record.relative.as_posix()}`\n\n"
+    #         f"**Lenguaje:** {record.language}  ·  "
+    #         f"**SHA-256:** `{record.sha256[:12] if record.sha256 else '—'}`\n\n"
+    #         f"```{fence}\n"
+    #     )
+    #     footer = "\n```\n\n---\n\n"
+    #     block = header + content + footer
+    #     if written + len(block.encode("utf-8")) > budget:
+    #         record.skipped_reason = "budget"
+    #         skipped.append(record)
+    #         continue
+    #     parts.append(block)
+    #     written += len(block.encode("utf-8"))
+
+    all_omitted = [r for r in records if r.skipped_reason in ("binary", "size")]
     if all_omitted:
         parts.append("# ARCHIVOS OMITIDOS\n\n")
         for r in all_omitted:
             parts.append(
                 f"- `{r.relative.as_posix()}` — motivo: **{r.skipped_reason}**\n")
         parts.append("\n")
-
     return "".join(parts)

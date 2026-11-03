@@ -14,11 +14,12 @@ class SecretHit:
     redacted: str
 
 
-# Patrones con nombre. Orden importa: los más específicos primero.
+# Orden importa: los más específicos primero.
 PATTERNS: list[tuple[str, re.Pattern]] = [
     ("aws_access_key", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("aws_secret_key", re.compile(
-        r"aws_secret_access_key\s*[:=]\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?",
+        r"(?:aws_?secret(?:_?access_?key)?|secret_?access_?key)"
+        r"\s*[:=]\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?",
         re.IGNORECASE)),
     ("private_key", re.compile(
         r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----")),
@@ -39,16 +40,34 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
         r"[^\s:@'\"]+:[^\s@'\"]+@")),
 ]
 
-# Patrones que son claramente placeholders. Se ignoran.
-PLACEHOLDER_PATTERNS = [
-    "your_", "example", "changeme", "placeholder", "xxxx",
-    "****", "todo", "fixme", "<your", "insert_",
-]
+# Placeholders REALES (con límites de palabra).
+# NO incluimos "example" suelto: AKIAIOSFODNN7EXAMPLE debe detectarse.
+_PLACEHOLDER_REGEX = re.compile(
+    r"""
+    \byour[_\-]?\w+          # your_key, your-token, yourkey, your_password
+    | \bchange[_\-]?me\b     # changeme, change-me
+    | \bplaceholder\b
+    | \btodo\b
+    | \bfixme\b
+    | \bx{4,}\b              # xxxx, xxxxxxxx
+    | \*{4,}                 # ****, ********
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
 
 
 def _is_placeholder(value: str) -> bool:
-    low = value.lower()
-    return any(p in low for p in PLACEHOLDER_PATTERNS)
+    """True si el valor es claramente un placeholder de documentación.
+
+    IMPORTANTE: NO rechazamos fixtures canónicos como AKIAIOSFODNN7EXAMPLE
+    (la llave de ejemplo de AWS). Un secreto de ejemplo copiado a código es
+    un riesgo real: alguien pudo haberlo usado por error.
+    """
+    if not value:
+        return True
+    if len(value) < 6:
+        return True
+    return bool(_PLACEHOLDER_REGEX.search(value))
 
 
 def _redact(value: str) -> str:
@@ -65,7 +84,6 @@ def scan_secrets(text: str) -> list[SecretHit]:
         for rule, pattern in PATTERNS:
             for match in pattern.finditer(line):
                 raw = match.group(0)
-                # Para patrones con grupo de captura, evaluar el grupo.
                 candidate = match.group(1) if match.groups() else raw
                 if _is_placeholder(candidate):
                     continue

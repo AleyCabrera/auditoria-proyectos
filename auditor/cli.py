@@ -26,25 +26,26 @@ def _build_parser() -> argparse.ArgumentParser:
                     "para que una IA lo audite.",
     )
     p.add_argument("path", nargs="?", default=".",
-                   help="Ruta del proyecto a auditar (default: .)")
+                    help="Ruta del proyecto a auditar (default: .)")
     p.add_argument("--output-dir", default=None,
-                   help="Directorio de salida (default: ./audit-output)")
+                    help="Directorio de salida (default: ./audit-output en el CWD)")
     p.add_argument("--preset", default="general",
-                   choices=["general", "security", "dependencies", "architecture"])
+                    choices=["general", "security", "dependencies", "architecture"])
     p.add_argument("--config", default=None, help="Ruta a un TOML de config")
     p.add_argument("--since", default=None,
-                   help="Solo archivos cambiados desde este ref git (ej: origin/main)")
+                    help="Solo archivos cambiados desde este ref git (ej: origin/main)")
     p.add_argument("--max-file-kb", type=int, default=None)
-    p.add_argument("--max-total-mb", type=int, default=None)
+    p.add_argument("--max-total-mb", type=float, default=None,
+                    help="Presupuesto total del documento en MB (acepta decimales: 0.5, 1.5)")
     p.add_argument("--no-gitignore", action="store_true")
     p.add_argument("--no-secrets", action="store_true")
     p.add_argument("--no-redact", action="store_true")
     p.add_argument("--no-hash", action="store_true")
     p.add_argument("--external", default=None,
-                   help="Scanners externos separados por coma "
+                    help="Scanners externos separados por coma "
                         "(ej: semgrep,bandit). Default según preset.")
     p.add_argument("--list-files", action="store_true",
-                   help="Solo listar archivos que se incluirían.")
+                    help="Solo listar archivos que se incluirían.")
     p.add_argument("--quiet", action="store_true")
     p.add_argument("--version", action="version", version=f"auditor {__version__}")
     return p
@@ -59,7 +60,7 @@ def _merge_config(args: argparse.Namespace) -> AuditConfig:
     if args.output_dir:
         cfg.output_dir = Path(args.output_dir).resolve()
     else:
-        cfg.output_dir = (cfg.project_path / "audit-output").resolve()
+        cfg.output_dir = (Path.cwd() / "audit-output").resolve()
     cfg.preset = args.preset
     if args.max_file_kb is not None:
         cfg.max_file_kb = args.max_file_kb
@@ -108,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
                  len(changed), args.since)
 
     log.info("Escaneando %s ...", cfg.project_path)
+    log.info("Output → %s", cfg.output_dir)
     records = scan(cfg, only_paths=only_paths)
     if not records:
         log.warning("No se encontraron archivos para auditar.")
@@ -145,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Chunking + manifest JSON
     paths = write_chunked(rendered, cfg)
-    manifest_path = write_manifest_json(records, cfg, git_meta)
+    manifest_path = write_manifest_json(records, cfg, git_meta, chunks=paths)
 
     log.info("")
     log.info("Documentos generados:")

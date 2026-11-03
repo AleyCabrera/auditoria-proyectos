@@ -44,7 +44,7 @@ class AuditConfig:
         ".env.example",
     ])
     max_file_kb: int = 300
-    max_total_mb: int = 8
+    max_total_mb: float = 8.0
     max_files_per_chunk: int = 150
     hash_files: bool = True
     scan_secrets: bool = True
