@@ -1,6 +1,6 @@
 <div align="center">
 
-# auditor
+# Auditoria de Proyectos
 
 **Pipeline de auditoría estática: empaqueta tu proyecto en Markdown + hallazgos de scanners para que cualquier LLM produzca un informe accionable.**
 
@@ -15,23 +15,41 @@
 
 ## Tabla de contenidos
 
-- [¿Por qué existe?](#por-qué-existe)
-- [Características](#características)
-- [Instalación](#instalación)
-- [Quick start](#quick-start)
-- [Cómo funciona](#cómo-funciona)
-- [Uso avanzado](#uso-avanzado)
-- [Referencia CLI](#referencia-cli)
-- [Formato de salida](#formato-de-salida)
-- [Configuración](#configuración)
-- [Arquitectura](#arquitectura)
-- [Decisiones de diseño](#decisiones-de-diseño)
-- [Limitaciones conocidas](#limitaciones-conocidas)
-- [Testing](#testing)
-- [Estado y roadmap](#estado-y-roadmap)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia)
-- [Autor](#autor)
+- [Auditoria de Proyectos](#auditoria-de-proyectos)
+  - [Tabla de contenidos](#tabla-de-contenidos)
+  - [¿Por qué existe?](#por-qué-existe)
+  - [Características](#características)
+  - [Instalación](#instalación)
+    - [Scanners externos (opcionales)](#scanners-externos-opcionales)
+  - [Quick start](#quick-start)
+  - [Cómo funciona](#cómo-funciona)
+    - [Etapas](#etapas)
+  - [Uso avanzado](#uso-avanzado)
+    - [Presets](#presets)
+    - [Modo diff (PR review)](#modo-diff-pr-review)
+    - [Presupuesto y límites](#presupuesto-y-límites)
+    - [Output custom](#output-custom)
+    - [Deshabilitar features](#deshabilitar-features)
+  - [Referencia CLI](#referencia-cli)
+  - [Formato de salida](#formato-de-salida)
+  - [Configuración](#configuración)
+    - [`.auditignore`](#auditignore)
+    - [`audit.toml`](#audittoml)
+  - [Arquitectura](#arquitectura)
+  - [Decisiones de diseño](#decisiones-de-diseño)
+    - [¿Por qué `<!-- CHUNK_BREAK -->` y no `##`?](#por-qué----chunk_break----y-no-)
+    - [¿Por qué el render no trunca al budget?](#por-qué-el-render-no-trunca-al-budget)
+    - [¿Por qué SHA-256 por archivo?](#por-qué-sha-256-por-archivo)
+    - [¿Por qué output al CWD y no al proyecto auditado?](#por-qué-output-al-cwd-y-no-al-proyecto-auditado)
+    - [¿Por qué redactar secretos en vez de omitirlos?](#por-qué-redactar-secretos-en-vez-de-omitirlos)
+    - [¿Por qué no hay split intra-archivo?](#por-qué-no-hay-split-intra-archivo)
+    - [¿Por qué 4 presets y no uno solo?](#por-qué-4-presets-y-no-uno-solo)
+  - [Limitaciones conocidas](#limitaciones-conocidas)
+  - [Testing](#testing)
+  - [Estado y roadmap](#estado-y-roadmap)
+  - [Contribuir](#contribuir)
+  - [Licencia](#licencia)
+  - [Autor](#autor)
 
 > Para comandos de uso diario, flujos por escenario y troubleshooting, ver [`COMMANDS.md`](COMMANDS.md).
 
